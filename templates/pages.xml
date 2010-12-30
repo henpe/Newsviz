@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Newsviz - Latest Stories</title>
+    <link>http://newsviz.appspot.com/pages/?render=xml</link>
+    <language>en-GB</language>
+    <lastBuildDate></lastBuildDate>
+    <pubDate></pubDate>
+    
+    {% autoescape off %}
+        {% for page in results.pages %}
+            <item>
+                <title>{{ page.title.translation }}</title>
+                <description>{{ page.summary.translation }}</description>
+                <link>http://translate.google.com/translate?hl=en&amp;sl=auto&amp;u={{page.url}}</link>
+                <pubDate>{{page.date}}</pubDate>
+            </item>
+        {% endfor %}
+    {% endautoescape %}
+</channel>

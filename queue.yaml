@@ -1,0 +1,4 @@
+queue:
+- name: page-worker
+  rate: 20/m
+  bucket_size: 5

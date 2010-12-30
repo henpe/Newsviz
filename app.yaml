@@ -1,0 +1,37 @@
+application: newsviz
+version: live
+runtime: python
+api_version: 1
+
+handlers:
+- url: /images
+  static_dir: images
+  expiration: "1d" 
+
+- url: /scripts
+  static_dir: scripts
+  
+- url: /styles
+  static_dir: styles
+  
+- url: /visualizations
+  static_dir: visualizations
+
+- url: /page/worker/
+  script: main.py
+  login: admin
+  
+- url: /stats/worker/
+  script: main.py
+  login: admin
+
+- url: /crossdomain.xml
+  static_files: crossdomain.xml
+  upload: crossdomain.xml
+
+- url: /
+  static_files: index.html
+  upload: index.html
+
+- url: .*
+  script: main.py

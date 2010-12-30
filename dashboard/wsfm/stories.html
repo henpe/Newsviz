@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+	<head>
+		<title>Newsviz - Dashboard</title>
+		<script src="/scripts/jquery-1.3.2.min.js" type="text/javascript"></script>		
+		<link rel="stylesheet" href="/styles/main.css" type="text/css" />
+		<link rel="stylesheet" href="/styles/theme_dark.css" type="text/css" />
+
+	</head>
+	<body id="dashboard">
+		<div id="container">
+			<div id="stats"></div>
+		</div>
+		<div id="overlay"></div>
+		
+		<script type="text/javascript">	 
+			// On load event handler
+			$(function() {
+                
+                if($.browser.msie){
+                    alert("This page works best in Firefox 3+, Chrome or Safari. Newer versions of Internet Explorer (IE7+) might work.");
+                }
+            
+                getItems();
+			});
+			
+			// Get new items
+			function getItems() {
+				// Get pages
+				$.getJSON(
+					"http://newsviz.appspot.com/pages/today/?render=json&callback=?",
+					function(data){
+						initPages(data.results.pages);
+						$("#overlay").remove();
+                    }
+				);
+			}
+			
+			// Init pages
+			function initPages(pages) {
+				if (pages.length > 0) {
+					$.each(pages, function(i, page){
+                        var node = addPage(page);
+                        $("#stats").prepend(node);
+					});
+                }
+			}
+			
+			function addPage(page) { 
+                var node = $("<span class=\"lang-" + page.lang + "\"></span>");
+                
+				return node;
+			}
+
+			
+		</script>
+	</body>
+</html>

@@ -1,0 +1,54 @@
+8
+
+dir
+1
+file://localhost/Users/henrik/SVN/newsviz/scripts/jquery-ui-1.7.2.custom/development-bundle/demos/switchClass
+file://localhost/Users/henrik/SVN/newsviz
+
+
+
+2009-09-20T00:08:09.441981Z
+1
+henrik
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+3ca866c7-095f-4d79-8a9f-ec162633e1b5
+
+default.html
+file
+
+
+
+
+2009-09-20T00:14:08.000000Z
+f6cbf8b9f343db117b72fc29d72a6cc2
+2009-09-20T00:08:09.441981Z
+1
+henrik
+has-props
+
+index.html
+file
+
+
+
+
+2009-09-20T00:14:08.000000Z
+16f8deb44cca8412dadb2f48655979e1
+2009-09-20T00:08:09.441981Z
+1
+henrik
+has-props
+

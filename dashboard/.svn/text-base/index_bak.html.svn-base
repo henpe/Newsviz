@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+	<head>
+		<title>Dashboard</title>
+		<script src="/scripts/jquery-1.3.2.min.js" type="text/javascript"></script>
+		<script src="/scripts/jquery.timeago.js" type="text/javascript"></script>
+		<script src="/scripts/jquery-ui-1.7.2.custom/js/jquery-ui-1.7.2.custom.min.js" type="text/javascript"></script>
+		
+		<link rel="stylesheet" href="/styles/main.css" type="text/css" />
+		<link rel="stylesheet" href="/styles/theme_midnight.css" type="text/css" />
+		<link type="text/css" href="/scripts/jquery-ui-1.7.2.custom/css/ui-lightness/jquery-ui-1.7.2.custom.css" rel="stylesheet" />
+
+	</head>
+	<body>
+		<div id="container">
+			<div id="map"></div>
+			<div id="pages">
+				<div id="status"></div>
+				<span id="refresh">Refresh</span>
+				<div id="progressbar"></div>
+				<ol></ol>
+			</div>
+			<div id="stats">
+				<h2>People in the news</h2>
+				<ol></ol>
+			</div>
+		</div>
+		<div id="overlay"></div>
+		
+		<script type="text/javascript" src="http://tile.cloudmade.com/wml/latest/web-maps-lite.js"></script>
+		<script type="text/javascript">
+			var cloudmade = new CM.Tiles.CloudMade.Web({key: '19d57a2cbf9e53fc8185f2a86b8abf42', styleId: 999});
+			var map = new CM.Map('map', cloudmade);
+			var mapPlaces = [];
+			var timestamp;
+			var pb = $("#progressbar");
+			
+			
+			$(function() {
+				pb.progressbar({
+					value: 100
+				});
+				
+				if (window.location.search.substring(1) == "auto=true") {
+					var countdownInterval = 5*60*1000 / 100;
+					window.setInterval(
+						function() {
+							var value = pb.progressbar('option', 'value');
+							value--;
+							if (value == 0) {
+								getItems();
+								resetCountdown();
+							} else {
+								pb.progressbar('option', 'value', value);
+							}
+						}, 
+						countdownInterval
+					)
+				}
+			});
+
+			// Add load event handler
+			CM.Event.addListener(map, 'load', function() {
+			
+				getItems();
+				
+				// Connect refresh button
+				$("#refresh").click(
+					function() {
+						getItems();
+						resetCountdown();
+					}
+				);
+				
+			});
+			
+			map.setCenter(new CM.LatLng(25, 10), 2);
+			//map.addControl(new CM.SmallMapControl());
+			
+			var icon = new CM.Icon();
+			icon.image = "../images/marker.png";	
+			icon.iconSize = new CM.Size(16, 29);
+			icon.iconAnchor = new CM.Point(8, 29);
+			
+			var icon2 = new CM.Icon();
+			icon2.image = "../images/marker_15x15.png";	
+			icon2.iconSize = new CM.Size(15, 15);
+			icon2.iconAnchor = new CM.Point(7, 7);
+			
+			
+			function resetCountdown() {
+				pb.progressbar('option', 'value', 100);
+			}
+			
+			function getItems() {
+				// Get pages
+				$.getJSON(
+					"http://newsviz.appspot.com/pages/?callback=?",
+					function(data){
+						initPages(data.results.pages);
+						$("#overlay").remove();
+					}
+				);
+				
+				// Get people
+				$.getJSON(
+					"http://newsviz.appspot.com/person/?callback=?",
+					function(data){
+						initPersons(data.results.persons);
+					}
+				);
+			}
+			
+			function initPages(pages) {
+				var status = $("#status").html("<h3>" + pages.length + " stories in the last 12 hours</h3>");
+				var list = $("#pages ol")[0];
+				
+				if (timestamp) {
+					// Clear new class
+					$("#pages ol li.new").each(function(i) {
+						$(this).removeClass("new");
+					});
+					
+					// Get new pages
+					newPages = jQuery.grep(pages, function(page, i){
+						page.date = page.date.split(".")[0];
+						var date = $.timeago.parse(page.date);
+						return (date > timestamp);
+					});
+					
+					pages = newPages;
+				}
+				
+				var delay = 0;
+				if (pages.length > 0) {
+					$.each(pages, function(i, page){
+						page.date = page.date.split(".")[0];
+						if (page.lang != "ur") {
+							var node = addPage(page);
+							$(list).prepend(node);
+							
+							if ($.timeago.parse(page.date) > timestamp) {
+								// Set a class on new items
+								$(node).addClass("new");
+							}
+							
+							if (timestamp) {
+								delay += 100;
+								setTimeout(function(){
+									$(node).fadeIn(1000);
+								}, delay);
+							} else {
+								$(node).fadeIn(600);
+							}
+						}
+					});
+					
+					// Save most current timestamp (used in refreshPages)
+					timestamp = $.timeago.parse(pages[pages.length - 1].date);
+					
+					// Get old pages
+					//oldPages = jQuery.grep(pages, function(page, i){
+					//	var date = $.timeago.parse(page.date);
+					//	return (date > timestamp);
+					//});
+				}
+			}
+
+			function initPersons(persons) {
+				var list = $("#stats ol")[0];
+				$(list).empty();
+				if (persons.length > 0) {
+					$.each(persons, function(i, person){
+						var node = addPerson(person);
+						$(list).append(node);
+					});
+				}
+			}
+			
+			function addPerson(person) {
+				var node = $("<li></li>");
+				var image = $("<img src=\"http://api.freebase.com/api/trans/image_thumb/guid/" + person.guid + "?maxheight=120&amp;maxwidth=100&amp;mode=fillcrop\" />").appendTo(node);
+				var title = $("<h3>" + person.label + "</h3>").appendTo(node);
+				var pages = $("<ul></ul>").appendTo(node);
+				
+				for (var i = 0; i < 1; i++) {
+					var page = person.results.pages[i];
+					
+					if (page) {
+						$("<li><a href=\"" + page.url + "\">" + page.title.translation + "</a></li>").appendTo(pages);
+					}
+				}
+				
+				return node;
+			}
+			
+			function addPage(page) {
+				//var node = $("<li class=\"lang-" + page.lang + "\"></li>");
+				var node = $("<li></li>");
+				var title = $("<h2><a href=\"" + page.url + "\">" + page.title.translation + "</a></h2>").appendTo(node);
+				var summary = $("<p>" + page.summary.translation + "</p>").appendTo(node);
+				var meta = $("<p class=\"meta\"></p>").appendTo(node);
+				
+				var timeago = jQuery.timeago(page.date);
+				
+				var site = $("<p class=\"site\">" + timeago + " in " + page.site + "</p>").appendTo(node);
+				
+				if (page.places && page.places.length > 0) {
+					var places = $("<span class=\"places\"></span>");
+					
+					$.each(page.places, function(i, place){
+						if (place.label) {
+							if (place.confidence > 0.27 && $.inArray(place.label.en, mapPlaces) == -1) {
+								addPlace(place);
+								$(places).append("<a href=\"http://newsviz.appspot.com/place/" + place.label.en + "\">" + place.label.en + "</a> ");
+								mapPlaces.push(place.label.en);
+							}
+						}
+					});
+					if (places[0].firstChild) {
+						$(places).prepend("Places: ");
+						$(places).appendTo(meta);
+					}
+					
+				}
+				
+				if (page.people && page.people.length > 0) {
+					var people = $("<span class=\"people\"></span>");
+					
+					$.each(page.people, function(i, person){
+						if (person.label) {
+							$(people).append("<a href=\"http://newsviz.appspot.com/person/" + person.label.en + "\">" + person.label.en + "</a> ");
+						}
+					});
+					if (people[0].firstChild) {
+						$(people).prepend("People: ");
+						$(people).appendTo(meta);
+					}
+				}
+				
+				if (page.organizations && page.organizations.length > 0) {
+					var organizations = $("<span class=\"organizations\"></span>");
+					
+					$.each(page.organizations, function(i, organization){
+						if (organization.label) {
+							$(organizations).append("<a href=\"http://newsviz.appspot.com/organization/" + organization.label.en + "\">" + organization.label.en + "</a> ");
+						}
+					});
+					if (organizations[0].firstChild) {
+						$(organizations).prepend("Organizations: ");
+						$(organizations).appendTo(meta);
+					}
+				}
+				
+				if (page.events && page.events.length > 0) {
+					var events = $("<span class=\"events\"></span>");
+					
+					$.each(page.events, function(i, event){
+						if (event.label) {
+							$(events).append("<a href=\"http://newsviz.appspot.com/event/" + event.label.en + "\">" + event.label.en + "</a> ");
+						}
+					});
+					if (events[0].firstChild) {
+						$(events).prepend("Events: ");
+						$(events).appendTo(meta);
+					}
+				}
+				
+				return node;
+			}
+			
+			function addPlace(place) {
+				if (place.geolocation) {
+					var position = new CM.LatLng(place.geolocation.latitude, place.geolocation.longitude);
+					var marker = new CM.Marker(position, {title: place.label.en, icon: icon});
+					//var marker2 = new CM.Marker(position, {title: place.label.en, icon: icon2});
+				
+					map.addOverlay(marker);
+					//map.addOverlay(marker2);
+				}
+			}
+			
+		</script>
+		<script type="text/javascript">
+			var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+			document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+		</script>
+		<script type="text/javascript">
+			try {
+				var pageTracker = _gat._getTracker("UA-10456994-1");
+				pageTracker._trackPageview();
+			} catch(err) {}
+		</script>
+	</body>
+</html>
