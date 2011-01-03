@@ -1,0 +1,8 @@
+cron:
+- description: periodically extract semantic values
+  url: /page/worker/
+  schedule: every 15 minutes
+  
+- description: periodically extract semantic values
+  url: /stats/worker/
+  schedule: every 30 minutes
